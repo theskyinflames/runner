@@ -59,7 +59,7 @@ mytaskimplementation = func(eot chan struct{}, taskManager TaskManager_I, args [
     mytask, err = GetTask(taskID, INFINITE_TASK_DURATION, mytaskimplementation, logger)
 ```
 
-4. Waking the task with a parameter and wating for the retur
+4. Waking up the task with a parameter and wating for the return
 ```go
     parameter := int64(100)
     err := myrunner.WakeUpTask(mytask, parameter)
