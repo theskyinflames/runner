@@ -147,29 +147,26 @@ func (r *runner) checkTasks() error {
 	var t time.Time
 	var runningTime int64
 	var taskDuration int64
+
 	for _, rtask := range r.tasks {
 		t = time.Now()
 		if rtask.RunningFrom == nil {
 			// The task has not been woke up yet. Waking it up...
-			rtask.FirstWakingUp = t
-			rtask.RunningFrom = []time.Time{t}
-			rtask.Task.Run(rtask.Args)
+			r.startTaskRunning(rtask, t)
+
 		} else {
+
 			// Check task duration (task duration <= 0 stands for infinite task)
 			runningTime = int64(t.Sub(rtask.FirstWakingUp).Seconds() * 1000)
 			taskDuration = int64(rtask.Task.GetDuration().Seconds() * 1000)
 
 			if rtask.Task.IsFinished() || (taskDuration > 0 && (runningTime >= taskDuration)) {
-				if rtask.Task.IsRunning() {
-					// This finishes the task and fires up the response sending
-					rtask.Task.Finalize()
-				}
-				delete(r.tasks, rtask.Task.GetID())
+				r.ensureTaskFinish(rtask)
 			} else {
+
 				// Check if the task is running
 				if !rtask.Task.IsRunning() {
-					rtask.RunningFrom = append(rtask.RunningFrom, t)
-					rtask.Task.Run(rtask.Args)
+					r.ensureTaskIsRunning(rtask, t)
 				} else {
 					// Keeping the task running ..
 					//r.logger.Debug("keep the task running",zap.Int64("running_time",runningTime),zap.Int64("task_duration", taskDuration))
@@ -179,4 +176,24 @@ func (r *runner) checkTasks() error {
 	}
 
 	return nil
+}
+
+func (r *runner) startTaskRunning(rtask *RunningTask, t time.Time){
+	rtask.FirstWakingUp = t
+	rtask.RunningFrom = []time.Time{t}
+	rtask.Task.Run(rtask.Args)
+}
+
+func (r *runner) ensureTaskFinish(rtask *RunningTask) {
+	if rtask.Task.IsRunning() {
+		// This finishes the task and fires up the response sending
+		rtask.Task.Finalize()
+	}
+	delete(r.tasks, rtask.Task.GetID())
+	return
+}
+
+func (r *runner) ensureTaskIsRunning(rtask *RunningTask, t time.Time) {
+	rtask.RunningFrom = append(rtask.RunningFrom, t)
+	rtask.Task.Run(rtask.Args)
 }
