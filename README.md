@@ -7,7 +7,7 @@ see [runner_test.go](./runner_test.go) to use cases
 ```go
     // Take the runner
     checkIntervalMS := int64(100)
-	myrunner, err := GetRunner(checkIntervalMS, logger)
+	myrunner, err := GetRunner(checkIntervalMS)
 	if err != nil {
 		return err
 	}
@@ -56,7 +56,7 @@ mytaskimplementation = func(eot chan struct{}, taskManager TaskManager_I, args [
 3. Get the runner task. It this case is an infinite task, in other words, a task without deadline
 ```go
     taskID := getUUID()
-    mytask, err = GetTask(taskID, INFINITE_TASK_DURATION, mytaskimplementation, logger)
+    mytask, err = GetTask(taskID, INFINITE_TASK_DURATION, mytaskimplementation)
 ```
 
 4. Waking up the task with a parameter and wating for the return

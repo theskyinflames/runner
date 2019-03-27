@@ -27,8 +27,6 @@ import (
 	"fmt"
 	"testing"
 	"time"
-
-	"go.uber.org/zap"
 )
 
 var err error
@@ -37,12 +35,10 @@ var myrunner Runner_I
 var mytask Task_I
 var mytaskimplementation TASK_IMPLEMENTATION
 
-var logger *zap.Logger = zap.NewExample()
-
-func TestRunner_Start(t *testing.T) {
+func getRunner(t *testing.T) Runner_I {
 
 	// Take the runner
-	if myrunner, err = GetRunner(100, logger); err != nil {
+	if myrunner, err = GetRunner(100); err != nil {
 		t.Error(err)
 	} else {
 		// Starting the runner
@@ -52,10 +48,17 @@ func TestRunner_Start(t *testing.T) {
 			t.Logf("Runner started \n")
 		}
 	}
+	return myrunner
+}
+
+func TestRunner_Start(t *testing.T) {
+	getRunner(t)
 }
 
 // Test for a finite task which is executed during all of its duration
 func TestRunner_WakeUpTaskDuration(t *testing.T) {
+
+	myrunner := getRunner(t)
 
 	// Define the task implementation
 	mytaskimplementation = func(eot chan struct{}, taskManager TaskManager_I, args []interface{}) ([]interface{}, error) {
@@ -79,7 +82,7 @@ func TestRunner_WakeUpTaskDuration(t *testing.T) {
 	}
 
 	// Get the task
-	if mytask, err = GetTask(1, time.Duration(3)*time.Second, mytaskimplementation, logger); err != nil {
+	if mytask, err = GetTask(1, time.Duration(3)*time.Second, mytaskimplementation); err != nil {
 		t.Error(err)
 	} else {
 		t.Logf("The task has been woken up\n")
@@ -104,6 +107,8 @@ func TestRunner_WakeUpTaskDuration(t *testing.T) {
 
 // Test for a finite task which finishes before its maximum duration
 func TestRunner_WakeUpTaskFinite(t *testing.T) {
+
+	myrunner := getRunner(t)
 
 	// Define the task implementation
 	mytaskimplementation = func(eot chan struct{}, taskManager TaskManager_I, args []interface{}) ([]interface{}, error) {
@@ -136,13 +141,13 @@ func TestRunner_WakeUpTaskFinite(t *testing.T) {
 	}
 
 	// Get the task
-	if mytask, err = GetTask(2, time.Duration(10)*time.Second, mytaskimplementation, logger); err != nil {
+	if mytask, err = GetTask(2, time.Duration(10)*time.Second, mytaskimplementation); err != nil {
 		t.Error(err)
 	} else {
 		t.Logf("The task has been woken up\n")
 
 		// Wakeup the task
-		if err = myrunner.WakeUpTask(mytask, int64(100), logger); err != nil {
+		if err = myrunner.WakeUpTask(mytask, int64(100)); err != nil {
 			t.Error(err)
 		} else {
 
@@ -161,6 +166,8 @@ func TestRunner_WakeUpTaskFinite(t *testing.T) {
 
 // Test for a finite task that breaks down and is resumed several times during its executin time
 func TestRunner_WakeUpTaskResuming(t *testing.T) {
+
+	myrunner := getRunner(t)
 
 	// Define the task implementation
 	mytaskimplementation = func(eot chan struct{}, taskManager TaskManager_I, args []interface{}) ([]interface{}, error) {
@@ -192,7 +199,7 @@ func TestRunner_WakeUpTaskResuming(t *testing.T) {
 	}
 
 	// Get the task
-	if mytask, err = GetTask(3, time.Duration(3)*time.Second, mytaskimplementation, logger); err != nil {
+	if mytask, err = GetTask(3, time.Duration(3)*time.Second, mytaskimplementation); err != nil {
 		t.Error(err)
 	} else {
 		t.Logf("The task has been woken up\n")

@@ -29,13 +29,23 @@ import (
 	"time"
 
 	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 )
 
 // Getting a runner instance
 // Parameters :
 //    tasks_checking_interval: Frequency in milliseconds of tasks checking done by the runner.
-func GetRunner(tasks_checking_interval int64, logger *zap.Logger) (Runner_I, error) {
+func GetRunner(tasks_checking_interval int64) (Runner_I, error) {
+
+	var lcfg zap.Config = zap.NewProductionConfig()
+	lcfg.EncoderConfig.EncodeTime = SyslogTimeEncoder
+	logger, _ := lcfg.Build()
+
 	return &runner{tasks_checking_interval: tasks_checking_interval, tasks: make(map[int64]*RunningTask), isRunnnig: false, logger: logger}, nil
+}
+
+func SyslogTimeEncoder(t time.Time, enc zapcore.PrimitiveArrayEncoder) {
+	enc.AppendString(t.Format(time.RFC3339))
 }
 
 type RunningTask struct {
@@ -72,6 +82,7 @@ func (r *runner) WakeUpTask(task Task_I, args ...interface{}) error {
 		return errors.New(fmt.Sprintf("Already exists a task with ID: %d", task.GetID()))
 	}
 	// Register the task
+	task.SetLogger(r.logger)
 	r.tasks[task.GetID()] = &RunningTask{Task: task, Args: args}
 	return nil
 
@@ -178,7 +189,7 @@ func (r *runner) checkTasks() error {
 	return nil
 }
 
-func (r *runner) startTaskRunning(rtask *RunningTask, t time.Time){
+func (r *runner) startTaskRunning(rtask *RunningTask, t time.Time) {
 	rtask.FirstWakingUp = t
 	rtask.RunningFrom = []time.Time{t}
 	rtask.Task.Run(rtask.Args)

@@ -43,6 +43,7 @@ const INFINITE_TASK_DURATION = 0
 // Task
 //
 type Task_I interface {
+	SetLogger(log *zap.Logger)
 	GetID() int64
 	GetDuration() time.Duration
 	GetResponseChan() chan *TaskResponse
@@ -69,6 +70,10 @@ type Task struct {
 type TaskResponse struct {
 	Result interface{}
 	Err    error
+}
+
+func (t *Task) SetLogger(logger *zap.Logger) {
+	t.logger = logger
 }
 
 func (t *Task) GetID() int64 {
@@ -138,7 +143,8 @@ func (t *Task) Finish() {
 //				  cases for more details about it.
 //                **special case**: 0 duration stands for infinite task
 //		implementation: Implementation function of the task. It my be complaint with the TASK_IMPLEMENTATION type
-func GetTask(id int64, duration time.Duration, implementation TASK_IMPLEMENTATION, logger *zap.Logger) (Task_I, error) {
+func GetTask(id int64, duration time.Duration, implementation TASK_IMPLEMENTATION) (Task_I, error) {
+
 	return &Task{Id: id,
 		Duration:       duration,
 		Implementation: implementation,
@@ -148,7 +154,6 @@ func GetTask(id int64, duration time.Duration, implementation TASK_IMPLEMENTATIO
 		ResponseChan:   make(chan *TaskResponse, 2),
 		Response:       &TaskResponse{},
 		once:           &sync.Once{},
-		logger:         logger,
 	}, nil
 }
 
